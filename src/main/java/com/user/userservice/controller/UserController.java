@@ -1,5 +1,6 @@
 package com.user.userservice.controller;
 
+import com.user.userservice.entity.Resource;
 import com.user.userservice.entity.UserEntity;
 import com.user.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,12 @@ public class UserController {
 
         CompletableFuture<List<UserEntity>> users = userService.getUseList();
         return users.thenApply(ResponseEntity::ok);
+    }
+    @GetMapping("/resource")
+    CompletableFuture<ResponseEntity> getResourceList() {
+
+        CompletableFuture<List<Resource>> resources = userService.getResourceList();
+        return resources.thenApply(ResponseEntity::ok);
     }
 
 }
