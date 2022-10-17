@@ -24,25 +24,7 @@ public class UserController {
 
 	@GetMapping("/user")
 	CompletableFuture<ResponseEntity> getUserList() {
-		CompletableFuture<List<UserEntity>> users = userService.getUseList();
-		CompletableFuture<List<Resource>> resources = userService.getResourceList();
-
-		return CompletableFuture.allOf(users, resources).thenApply(none -> {
-			Combined combinedResult = new Combined();
-			List<UserEntity> userList = users.join();
-			if (null != userList) {
-				combinedResult.setUsr(userList);
-			}
-			List<Resource> resourceList = resources.join();
-			if (null != resourceList) {
-				combinedResult.setReso(resourceList);
-			}
-			return combinedResult;
-		}).exceptionally(ex -> {
-			ex.printStackTrace();
-			return null;
-		}).thenApply(ResponseEntity::ok);
-
+		return userService.getUseList().thenApply(ResponseEntity::ok);
 	}
 	@GetMapping("/userresource")
 	CompletableFuture<ResponseEntity> getuserResourceConbined(){
