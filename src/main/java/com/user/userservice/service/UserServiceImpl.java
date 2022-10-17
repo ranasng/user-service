@@ -3,6 +3,7 @@ package com.user.userservice.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.user.userservice.entity.Combined;
 import com.user.userservice.entity.Resource;
 import com.user.userservice.entity.UserEntity;
 import org.slf4j.Logger;
@@ -29,22 +30,23 @@ public class UserServiceImpl implements UserService {
     @Async
     public CompletableFuture<List<UserEntity>> getUseList() {
         long startTime = System.currentTimeMillis();
-        String url = "https://reqres.in/api/users?page=1&per_page=10";
+        String url = "https://reqres.in/api/users?page=1&per_page=3";
         String json = restTemplate.getForObject(url, String.class);
 
-        List<UserEntity> users = null;
+        List<UserEntity> users = null;        
         try {
             JsonNode jsonNode = objectMapper.readTree(json);
             JsonNode usersNode = jsonNode.get("data");
             users = objectMapper.treeToValue(usersNode, List.class);
-            logger.info("Thread Name {}", Thread.currentThread().getName());
+            
+            logger.info("User Thread Name {}", Thread.currentThread().getName());
 
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             logger.error(e.getMessage());
         }
         long endTime = System.currentTimeMillis();
-        logger.info("Exexution Time {}", endTime - startTime, " ms");
+        logger.info("User Exexution Time {}", endTime - startTime);
         return CompletableFuture.completedFuture(users);
     }
 
@@ -59,15 +61,41 @@ public class UserServiceImpl implements UserService {
                 JsonNode jsonNode = objectMapper.readTree(json);
                 JsonNode resourceNode = jsonNode.get("data");
                 res = objectMapper.treeToValue(resourceNode, List.class);
-                logger.info("Resource executed by {}", Thread.currentThread().getName());
+                logger.info("Resource Thread name {}", Thread.currentThread().getName());
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
             return res;
         }, taskExecutor);
         long endTime = System.currentTimeMillis();
-        logger.info("Execution Time {} ", endTime - startTime, "  ms");
+        logger.info("Resource Execution Time {} ", endTime - startTime);
         return resource;
     }
+
+	@Override
+	public CompletableFuture<Combined> getCombinedResult() {
+		CompletableFuture<List<UserEntity>> users = this.getUseList();
+		CompletableFuture<List<Resource>> resources = this.getResourceList();
+		
+		return CompletableFuture.allOf(users, resources).thenApplyAsync(none -> {
+			Combined combinedResult = new Combined();
+			List<UserEntity> userList = users.join();
+			if (null != userList) {
+				combinedResult.setUsr(userList);
+			}
+			List<Resource> resourceList = resources.join();
+			if (null != resourceList) {
+				combinedResult.setReso(resourceList);
+			}
+			return combinedResult;
+		},taskExecutor).exceptionally(ex -> {
+			logger.error(ex.getMessage());
+			return null;
+		});
+		
+	}
+
+	
+  
 
 }
